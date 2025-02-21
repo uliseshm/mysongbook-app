@@ -29,17 +29,22 @@ const App = () => {
   const pickFile = async () => {
     try {
       const res = await DocumentPicker.getDocumentAsync({ type: "*/*" });
-      if (res.type === "success") {
-        const fileUri = res.uri;
-        const content = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
-
-        content = decodeURIComponent(escape(content));
- 
-        const newSong = { name: res.name, uri: res.uri, content };
-        const updatedSongs = [...songs, newSong];
-        setSongs(updatedSongs);
-        await AsyncStorage.setItem("songs", JSON.stringify(updatedSongs));
+      console.log("Respuesta completa del selector:", res);
+      
+      if (!res || res.canceled || !res.assets) {
+        return;
       }
+      const file = res.assets[0];
+      const fileUri = file.uri;
+      const content = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
+      
+      const newSong = { name: file.name, uri: fileUri, content };
+      
+      setSongs((prevSongs) => {
+        const updatedSongs = [...prevSongs, newSong];
+        AsyncStorage.setItem("songs", JSON.stringify(updatedSongs));
+        return updatedSongs;
+      });
     } catch (err) {
       console.error("Error al seleccionar el archivo:", err);
     }
